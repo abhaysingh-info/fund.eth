@@ -1,8 +1,9 @@
 import { ServerUrl } from "@/config";
 import { IGlobalLoginState, IGlobalUserState } from "@/types";
 import { IUser } from "@/types/user";
-import { createContext, useContext, } from "react";
+import { Context, createContext, useContext, } from "react";
 
+const BASE_URL = `${ServerUrl}/user`
 
 export const DefaultUserValues: IUser = {
     account_suspended: false,
@@ -13,7 +14,7 @@ export const DefaultUserValues: IUser = {
     wallet_address: "",
 }
 
-const user = createContext<IGlobalUserState>({
+export const user = createContext<IGlobalUserState>({
     setUser(user) {
         console.log(`User`, user)
     },
@@ -23,7 +24,7 @@ const user = createContext<IGlobalUserState>({
 export const UserProvider = user.Provider
 
 
-const isLoggedIn = createContext<IGlobalLoginState>({
+export const isLoggedIn = createContext<IGlobalLoginState>({
     isLoggedIn: false,
     setIsLoggedIn(loggedIn) {
 
@@ -31,13 +32,9 @@ const isLoggedIn = createContext<IGlobalLoginState>({
 })
 export const IsLoggedInProvider = isLoggedIn.Provider
 
-export function getUser() {
-    const _user = useContext(user)
-    return _user
-}
 
-export function getIsLoggedIn() {
-    const loggedIn = useContext(isLoggedIn)
+export function getIsLoggedIn(isLoggedIn: IGlobalLoginState) {
+    const loggedIn = isLoggedIn
     return loggedIn
 }
 
@@ -45,10 +42,9 @@ export async function createUser(user: {
     name: string;
     email: string;
     password: string;
-    confirm_password: string;
 }) {
     try {
-        const response = await fetch(ServerUrl + '/admin/create', {
+        const response = await fetch(BASE_URL, {
             method: 'POST',
             body: JSON.stringify(user),
             credentials: 'include',
@@ -68,9 +64,9 @@ export async function createUser(user: {
     }
 }
 
-export async function loginUser(user: { email: string; password: string }) {
+export async function loginUser(user: { email: string; password: string }, userContext: IGlobalUserState, isLoggedInContext: IGlobalLoginState) {
     try {
-        const response = await fetch(ServerUrl + '/login', {
+        const response = await fetch(BASE_URL + '/login', {
             method: 'POST',
             body: JSON.stringify(user),
             credentials: 'include',
@@ -85,40 +81,17 @@ export async function loginUser(user: { email: string; password: string }) {
         }
 
         const data = await response.json();
-        afterLogIn(data.user);
+        afterLogIn(data.user, userContext, isLoggedInContext);
         return data;
     } catch (error: any) {
-        afterLogOut();
+        afterLogOut(userContext, isLoggedInContext);
         return error;
     }
 }
 
-export async function verifyLogin() {
+export async function verifyLogin(userContext: IGlobalUserState, isLoggedInContext: IGlobalLoginState) {
     try {
-        const response = await fetch(ServerUrl + '/login/verify', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-
-        const data = await response.json();
-        afterLogIn(data.user);
-        return data;
-    } catch (error: any) {
-        afterLogOut();
-        return error;
-    }
-}
-
-export async function logoutUser() {
-    try {
-        const response = await fetch(ServerUrl + '/logout', {
+        const response = await fetch(BASE_URL + '/login/verify', {
             method: 'GET',
             credentials: 'include',
             headers: {
@@ -130,26 +103,49 @@ export async function logoutUser() {
             throw new Error('Network response was not ok');
         }
 
-        afterLogOut();
+        const data = await response.json();
+        afterLogIn(data.user, userContext, isLoggedInContext);
+        return data;
+    } catch (error: any) {
+        afterLogOut(userContext, isLoggedInContext);
+        return error;
+    }
+}
+
+export async function logoutUser(userContext: IGlobalUserState, isLoggedInContext: IGlobalLoginState) {
+    try {
+        const response = await fetch(BASE_URL + '/logout', {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        afterLogOut(userContext, isLoggedInContext);
         const data = await response.json();
         return data;
     } catch (error: any) {
-        afterLogOut();
+        afterLogOut(userContext, isLoggedInContext);
         return error;
     }
 }
 
 
-export async function afterLogIn(_user: Partial<IUser>) {
-    var usr = getUser()
+export async function afterLogIn(_user: Partial<IUser>, userContext: IGlobalUserState, isLoggedInContext: IGlobalLoginState) {
+    var usr = userContext
     usr.setUser(_user)
-    var isLoggedIn = getIsLoggedIn()
+    var isLoggedIn = isLoggedInContext
     isLoggedIn.setIsLoggedIn(true)
 }
 
-export async function afterLogOut() {
-    var usr = getUser()
+export async function afterLogOut(userContext: IGlobalUserState, isLoggedInContext: IGlobalLoginState) {
+    var usr = userContext
     usr.setUser(DefaultUserValues)
-    var isLoggedIn = getIsLoggedIn()
+    var isLoggedIn = isLoggedInContext
     isLoggedIn.setIsLoggedIn(false)
 }
