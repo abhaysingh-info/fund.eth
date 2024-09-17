@@ -71,7 +71,6 @@ export default function SignUp() {
 			...prevData,
 			[name]: value,
 		}))
-		console.log(value, name)
 	}
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

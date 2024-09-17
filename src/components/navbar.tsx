@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Menu } from 'lucide-react'
+import {ArrowRight, Menu} from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -15,15 +15,20 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { ModeToggle } from './mode-toggle'
 import { links } from '@/config'
-import { getIsLoggedIn, user } from '@/services/user.service'
+import {getIsLoggedIn, logoutUser, user} from '@/services/user.service'
 import * as UserService from '@/services/user.service'
 
 export default function Navbar() {
 	const isLoggedInCtx = React.useContext(UserService.isLoggedIn)
+	const userCtx = React.useContext(UserService.user)
 
 	const { isLoggedIn, setIsLoggedIn } = getIsLoggedIn(isLoggedInCtx)
 
 	const [isOpen, setIsOpen] = React.useState(false)
+
+	async function onLogout() {
+		await logoutUser(userCtx, isLoggedInCtx);
+	}
 
 	return (
 		<nav className="border-b bg-background ">
@@ -101,6 +106,11 @@ export default function Navbar() {
 					<NavigationMenuList className="flex space-x-4">
 						<NavigationMenuItem>
 							<ModeToggle />
+						</NavigationMenuItem>
+						<NavigationMenuItem className={isLoggedIn ? '' : 'hidden'}>
+							<Button variant="outline" size={"icon"} onClick={onLogout} >
+								<ArrowRight   />
+							</Button>
 						</NavigationMenuItem>
 						<NavigationMenuItem className={isLoggedIn ? 'hidden' : ''}>
 							<Link href={'/log-in'}>
