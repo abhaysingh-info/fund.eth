@@ -28,3 +28,7 @@ export const FundModalProvider = fundModal.Provider
 export async function createFund(eventId:number, amount:number) {
     return await sendRequest(BASE_URL, `/${eventId}`, 'POST', {amount}); // Assuming '/api/events' for create
 }
+
+export async function filterFund(start:number) {
+    return await sendRequest(BASE_URL, `/?start=${start}`, 'POST'); // Assuming '/api/events' for create
+}

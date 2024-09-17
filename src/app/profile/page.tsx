@@ -24,7 +24,7 @@ export default function Profile() {
             </section>
             <Separator/>
             <div>
-                <EventFeed user={true} />
+                <EventFeed userFeed={true} />
             </div>
         </div>
     </div>
